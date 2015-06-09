@@ -5,8 +5,10 @@ class Panda::Project {
     has %.metainfo;
 
     has $.build-output is rw;
+    has $.build-error is rw;
     has $.build-passed is rw;
     has $.test-output is rw;
+    has $.test-error is rw;
     has $.test-passed is rw;
 
     enum State <absent installed-dep installed>;
