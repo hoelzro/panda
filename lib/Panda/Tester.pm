@@ -1,5 +1,6 @@
 class Panda::Tester {
 use Panda::Common;
+use IO::Pipe;
 
 method test($where, :$bone, :$prove-command = 'prove') {
     indir $where, {
@@ -19,16 +20,22 @@ method test($where, :$bone, :$prove-command = 'prove') {
             withp6lib {
                 my $cmd    = "$prove-command -e \"$*EXECUTABLE -Ilib\" -r t/";
 
-                my $handle = pipe("$cmd 2>&1", :r);
+                my $p = pipe($cmd, :out, :err);
                 my $output = '';
-                for $handle.lines {
+                my $err = '';
+                for $p.out.lines {
                     .chars && .say;
                     $output ~= "$_\n";
                 }
-                my $passed = $handle.close.status == 0;
+                for $p.err.lines {
+                    .chars && .say;
+                    $err ~= "$_\n";
+                }
+                my $passed = $p.close.status == 0;
 
                 if $bone {
                     $bone.test-output = $output;
+                    $bone.test-error  = $err;
                     $bone.test-passed = $passed;
                 }
 

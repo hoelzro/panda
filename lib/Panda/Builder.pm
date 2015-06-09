@@ -2,6 +2,7 @@ class Panda::Builder {
 use Panda::Common;
 use File::Find;
 use Shell::Command;
+use IO::Pipe;
 
 sub path-to-module-name($path) {
     my $slash = / [ '/' | '\\' ]  /;
@@ -92,6 +93,7 @@ method build($where, :$bone) {
         my @tobuild = build-order(@files);
         withp6lib {
             my $output = '';
+            my $err = '';
             for @tobuild -> $file {
                 $file.copy: "blib/$file";
                 next unless $file ~~ /\.pm6?$/;
@@ -107,15 +109,20 @@ method build($where, :$bone) {
                 my $cmd    = "$*EXECUTABLE --target={comptarget} "
                            ~ "--output=$dest $file";
                 $output ~= "$cmd\n";
-                my $handle = pipe("$cmd 2>&1", :r);
-                for $handle.lines {
+                my $p = pipe($cmd, :out, :err);
+                for $p.out.lines {
                     .chars && .say;
                     $output ~= "$_\n";
                 }
-                my $passed = $handle.close.status == 0;
+                for $p.err.lines {
+                    .chars && .say;
+                    $err ~= "$_\n";
+                }
+                my $passed = $p.close.status == 0;
 
                 if $bone {
                     $bone.build-output = $output;
+                    $bone.build-error  = $err;
                     $bone.build-passed = $passed;
                 }
                 fail "Failed building $file" unless $passed;
