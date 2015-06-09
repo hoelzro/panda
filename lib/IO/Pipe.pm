@@ -88,6 +88,10 @@ class IO::Pipe {
           $flags
         );
     }
+
+    method close {
+        Proc::Status.new(:exitcode(0), :signal(0), :$!pid) # a shim, for now
+    }
 }
 
 sub pipe($cmd, |c) is export {
