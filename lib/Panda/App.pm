@@ -7,6 +7,10 @@ use Panda::Project;
 sub make-default-ecosystem(Str $prefix? is copy) is export {
     my $custom-prefix = ?$prefix;
     my $pandadir;
+    if defined($prefix) && $prefix ~~ /^ 'inst#' (.*) / {
+        my $repo = CompUnit::RepositoryRegistry.repository-for-spec($prefix);
+        $prefix = $repo.prefix.Str if $repo;
+    }
     $prefix = "$*CWD/$prefix" if defined($prefix) && !$*DISTRO.is-win && $prefix !~~ /^ '/' /;
     my @custom-lib = <site home>.map({CompUnit::RepositoryRegistry.repository-for-name($_)}).grep(*.defined).map(*.prefix.Str);
     for grep(*.defined, flat $prefix, @custom-lib) -> $target {
